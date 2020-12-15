@@ -2,7 +2,7 @@
 using System;
 using System.Linq;
 
-namespace BugTracker2.Data
+namespace BugTracker2.Areas.Identity.Data
 {
    public class DbInitializer
    {

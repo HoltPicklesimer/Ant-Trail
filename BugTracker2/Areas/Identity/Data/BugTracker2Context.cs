@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using BugTracker2.Models;
 
-namespace BugTracker2.Data
+namespace BugTracker2.Areas.Identity.Data
 {
     public class BugTracker2Context : IdentityDbContext<User>
     {

@@ -6,8 +6,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using BugTracker2.Data;
 using Microsoft.Extensions.DependencyInjection;
+using BugTracker2.Areas.Identity.Data;
 
 namespace BugTracker2
 {

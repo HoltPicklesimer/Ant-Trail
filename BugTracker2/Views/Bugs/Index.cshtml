@@ -1,0 +1,78 @@
+﻿@model IEnumerable<BugTracker2.Models.Bug>
+
+@{
+    ViewData["Title"] = "Index";
+    Layout = "~/Views/Shared/_LoginPartial.cshtml";
+}
+
+<h1>Index</h1>
+
+<p>
+    <a asp-action="Create">Create New</a>
+</p>
+<table class="table">
+    <thead>
+        <tr>
+            <th>
+                @Html.DisplayNameFor(model => model.BugName)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.ReportDate)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.Behavior)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.StepsDescription)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.Severity)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.UserReported)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.UserAssigned)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.Status)
+            </th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+@foreach (var item in Model) {
+        <tr>
+            <td>
+                @Html.DisplayFor(modelItem => item.BugName)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.ReportDate)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.Behavior)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.StepsDescription)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.Severity.SeverityId)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.UserReported.Id)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.UserAssigned.Id)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.Status.StatusId)
+            </td>
+            <td>
+                <a asp-action="Edit" asp-route-id="@item.BugId">Edit</a> |
+                <a asp-action="Details" asp-route-id="@item.BugId">Details</a> |
+                <a asp-action="Delete" asp-route-id="@item.BugId">Delete</a>
+            </td>
+        </tr>
+}
+    </tbody>
+</table>

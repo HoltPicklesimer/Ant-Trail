@@ -1,6 +1,5 @@
 ﻿using System;
 using BugTracker2.Areas.Identity.Data;
-using BugTracker2.Data;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI;
@@ -15,18 +14,7 @@ namespace BugTracker2.Areas.Identity
     {
         public void Configure(IWebHostBuilder builder)
         {
-            builder.ConfigureServices((context, services) =>
-            {
-                services.AddDbContext<BugTracker2Context>(options =>
-                    options.UseSqlServer(
-                        context.Configuration.GetConnectionString("BugTracker2ContextConnection")));
-
-                services.AddDefaultIdentity<User>(options =>
-                {
-                    options.SignIn.RequireConfirmedAccount = false;
-                })
-                    .AddEntityFrameworkStores<BugTracker2Context>();
-            });
+            
         }
     }
 }

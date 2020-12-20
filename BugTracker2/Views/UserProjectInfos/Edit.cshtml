@@ -1,0 +1,40 @@
+﻿@model BugTracker2.Models.UserProjectInfo
+
+@{
+    ViewData["Title"] = "Edit User";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<h1>Edit User Details</h1>
+
+<h4>Edit User Details for @Model.Project.ProjectName</h4>
+<hr />
+<div class="row">
+    <div class="col-md-4">
+        <form asp-action="Edit" asp-route-id="ProjectId">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <div class="form-group">
+                <input asp-for="UserProjectInfoId" type="hidden" value="@Model.UserProjectInfoId" />
+                <input asp-for="ProjectId" type="hidden" value="@Model.ProjectId" />
+                <input asp-for="UserId" type="hidden" value="@Model.UserId" />
+                <label asp-for="User.PublicInfo" control-label"></label>
+                <input asp-for="User.PublicInfo" class="form-control" value="@Model.User.PublicInfo" disabled="disabled" />
+            </div>
+            <div class="form-group">
+                <label asp-for="PrivilegeId" class="control-label"></label>
+                <select asp-for="PrivilegeId" class="form-control" asp-items="ViewBag.PrivilegeId"></select>
+            </div>
+            <div class="form-group">
+                <input type="submit" value="Save" class="btn btn-primary" />
+            </div>
+        </form>
+    </div>
+</div>
+
+<div>
+    <a asp-action="Details" asp-controller="Projects" asp-route-id="@Model.ProjectId">Back to List</a>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

@@ -1,70 +1,69 @@
 ﻿@model BugTracker2.Models.Bug
 
 @{
-    ViewData["Title"] = "Delete";
-    Layout = "~/Views/Shared/_LoginPartial.cshtml";
+    ViewData["Title"] = "Delete Bug";
+    Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
-<h1>Delete</h1>
+<h1>Delete Bug</h1>
 
-<h3>Are you sure you want to delete this?</h3>
+<h3>Are you sure you want to delete this bug from @Model.Project.ProjectName?</h3>
 <div>
-    <h4>Bug</h4>
     <hr />
     <dl class="row">
-        <dt class = "col-sm-2">
+        <dt class="col-sm-2">
             @Html.DisplayNameFor(model => model.BugName)
         </dt>
-        <dd class = "col-sm-10">
+        <dd class="col-sm-10">
             @Html.DisplayFor(model => model.BugName)
         </dd>
-        <dt class = "col-sm-2">
+        <dt class="col-sm-2">
             @Html.DisplayNameFor(model => model.ReportDate)
         </dt>
-        <dd class = "col-sm-10">
+        <dd class="col-sm-10">
             @Html.DisplayFor(model => model.ReportDate)
         </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.Behavior)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.Behavior)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.StepsDescription)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.StepsDescription)
-        </dd>
-        <dt class = "col-sm-2">
+        <dt class="col-sm-2">
             @Html.DisplayNameFor(model => model.Severity)
         </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.Severity.SeverityId)
-        </dd class>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.UserReported)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.UserReported.Id)
-        </dd class>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.UserAssigned)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.UserAssigned.Id)
-        </dd class>
-        <dt class = "col-sm-2">
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.Severity.SeverityDisplay)
+        </dd>
+        <dt class="col-sm-2">
             @Html.DisplayNameFor(model => model.Status)
         </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.Status.StatusId)
-        </dd class>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.Status.StatusDisplay)
+        </dd>
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.Behavior)
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.Behavior)
+        </dd>
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.StepsDescription)
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.StepsDescription)
+        </dd>
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.UserReported)
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.UserReported.FullName)
+        </dd>
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.UserAssigned)
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.UserAssigned.FullName)
+        </dd>
     </dl>
-    
+
     <form asp-action="Delete">
         <input type="hidden" asp-for="BugId" />
         <input type="submit" value="Delete" class="btn btn-danger" /> |
-        <a asp-action="Index">Back to List</a>
+        <a asp-action="Details" asp-controller="Projects" asp-route-id="@Model.ProjectId">Back to List</a>
     </form>
 </div>

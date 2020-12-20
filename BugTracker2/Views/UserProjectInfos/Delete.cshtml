@@ -1,0 +1,33 @@
+﻿@model BugTracker2.Models.UserProjectInfo
+
+@{
+    ViewData["Title"] = "Remove User";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<h1>Remove User from Project</h1>
+
+<h3>Are you sure you want to remove this user from @Model.Project.ProjectName?</h3>
+<div>
+    <hr />
+    <dl class="row">
+        <dt class = "col-sm-2">
+            @Html.DisplayNameFor(model => model.UserId)
+        </dt>
+        <dd class = "col-sm-10">
+            @Html.DisplayFor(model => model.User.PublicInfo)
+        </dd class>
+        <dt class = "col-sm-2">
+            @Html.DisplayNameFor(model => model.PrivilegeId)
+        </dt>
+        <dd class = "col-sm-10">
+            @Html.DisplayFor(model => model.Privilege.PrivilegeDisplay)
+        </dd class>
+    </dl>
+    
+    <form asp-action="Delete">
+        <input type="hidden" asp-for="UserProjectInfoId" />
+        <input type="submit" value="Remove" class="btn btn-danger" /> |
+        <a asp-action="Details" asp-controller="Projects" asp-route-id="@Model.ProjectId">Back to List</a>
+    </form>
+</div>

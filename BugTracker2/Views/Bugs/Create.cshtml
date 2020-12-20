@@ -1,53 +1,47 @@
 ﻿@model BugTracker2.Models.Bug
 
 @{
-    ViewData["Title"] = "Create";
-    Layout = "~/Views/Shared/_LoginPartial.cshtml";
+    ViewData["Title"] = "Create Bug Report";
+    Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
-<h1>Create</h1>
+<h1>Create a Bug Report</h1>
 
-<h4>Bug</h4>
+<h4>Bug Report for @ViewData["ProjectName"]</h4>
 <hr />
 <div class="row">
     <div class="col-md-4">
         <form asp-action="Create">
             <div asp-validation-summary="ModelOnly" class="text-danger"></div>
             <div class="form-group">
+            </div>
+            <div class="form-group">
+                <input asp-for="ProjectId" type="hidden" />
                 <label asp-for="BugName" class="control-label"></label>
                 <input asp-for="BugName" class="form-control" />
                 <span asp-validation-for="BugName" class="text-danger"></span>
             </div>
             <div class="form-group">
-                <label asp-for="ReportDate" class="control-label"></label>
-                <input asp-for="ReportDate" class="form-control" />
-                <span asp-validation-for="ReportDate" class="text-danger"></span>
-            </div>
-            <div class="form-group">
                 <label asp-for="SeverityId" class="control-label"></label>
-                <select asp-for="SeverityId" class ="form-control" asp-items="ViewBag.SeverityId"></select>
+                <select asp-for="SeverityId" class="form-control" asp-items="ViewBag.SeverityId"></select>
             </div>
             <div class="form-group">
                 <label asp-for="Behavior" class="control-label"></label>
-                <input asp-for="Behavior" class="form-control" />
+                <textarea asp-for="Behavior" class="form-control" ></textarea>
                 <span asp-validation-for="Behavior" class="text-danger"></span>
             </div>
             <div class="form-group">
                 <label asp-for="StepsDescription" class="control-label"></label>
-                <input asp-for="StepsDescription" class="form-control" />
+                <textarea asp-for="StepsDescription" class="form-control"></textarea>
                 <span asp-validation-for="StepsDescription" class="text-danger"></span>
             </div>
             <div class="form-group">
                 <label asp-for="UserReportedId" class="control-label"></label>
-                <select asp-for="UserReportedId" class ="form-control" asp-items="ViewBag.UserReportedId"></select>
+                <select asp-for="UserReportedId" class="form-control" asp-items="ViewBag.UserReportedId"></select>
             </div>
             <div class="form-group">
                 <label asp-for="UserAssignedId" class="control-label"></label>
-                <select asp-for="UserAssignedId" class ="form-control" asp-items="ViewBag.UserAssignedId"></select>
-            </div>
-            <div class="form-group">
-                <label asp-for="StatusId" class="control-label"></label>
-                <select asp-for="StatusId" class ="form-control" asp-items="ViewBag.StatusId"></select>
+                <select asp-for="UserAssignedId" class="form-control" asp-items="ViewBag.UserAssignedId"></select>
             </div>
             <div class="form-group">
                 <input type="submit" value="Create" class="btn btn-primary" />
@@ -57,7 +51,7 @@
 </div>
 
 <div>
-    <a asp-action="Index">Back to List</a>
+    <a asp-action="Details" asp-controller="Projects" asp-route-id="@Model.ProjectId">Back to List</a>
 </div>
 
 @section Scripts {

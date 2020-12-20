@@ -28,7 +28,7 @@ namespace BugTracker2
         {
             services.AddControllersWithViews();
             services.AddRazorPages();
-
+            services.AddHttpContextAccessor();
 
             services.AddDbContext<BugTracker2Context>(options =>
                 options.UseSqlServer(

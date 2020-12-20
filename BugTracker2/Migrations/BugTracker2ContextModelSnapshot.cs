@@ -90,31 +90,6 @@ namespace BugTracker2.Migrations
                     b.ToTable("AspNetUsers");
                 });
 
-            modelBuilder.Entity("BugTracker2.Models.Admin", b =>
-                {
-                    b.Property<int>("AdminId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
-                        .UseIdentityColumn();
-
-                    b.Property<int>("GroupId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("PrivilegeId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("UserId")
-                        .HasColumnType("nvarchar(450)");
-
-                    b.HasKey("AdminId");
-
-                    b.HasIndex("GroupId");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("Admin");
-                });
-
             modelBuilder.Entity("BugTracker2.Models.Bug", b =>
                 {
                     b.Property<int>("BugId")
@@ -131,6 +106,9 @@ namespace BugTracker2.Migrations
                         .IsRequired()
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
+
+                    b.Property<int>("ProjectId")
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("ReportDate")
                         .HasColumnType("datetime2");
@@ -154,6 +132,8 @@ namespace BugTracker2.Migrations
 
                     b.HasKey("BugId");
 
+                    b.HasIndex("ProjectId");
+
                     b.HasIndex("SeverityId");
 
                     b.HasIndex("StatusId");
@@ -163,50 +143,6 @@ namespace BugTracker2.Migrations
                     b.HasIndex("UserReportedId");
 
                     b.ToTable("Bug");
-                });
-
-            modelBuilder.Entity("BugTracker2.Models.Group", b =>
-                {
-                    b.Property<int>("GroupId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
-                        .UseIdentityColumn();
-
-                    b.Property<string>("GroupDescription")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<string>("GroupName")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.HasKey("GroupId");
-
-                    b.ToTable("Group");
-                });
-
-            modelBuilder.Entity("BugTracker2.Models.GroupProject", b =>
-                {
-                    b.Property<int>("GroupProjectId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
-                        .UseIdentityColumn();
-
-                    b.Property<int>("GroupId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("ProjectId")
-                        .HasColumnType("int");
-
-                    b.HasKey("GroupProjectId");
-
-                    b.HasIndex("GroupId");
-
-                    b.HasIndex("ProjectId");
-
-                    b.ToTable("GroupProject");
                 });
 
             modelBuilder.Entity("BugTracker2.Models.Privilege", b =>
@@ -277,39 +213,23 @@ namespace BugTracker2.Migrations
                     b.Property<string>("StatusName")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<int>("Step")
+                        .HasColumnType("int");
+
                     b.HasKey("StatusId");
 
                     b.ToTable("Status");
                 });
 
-            modelBuilder.Entity("BugTracker2.Models.UserGroup", b =>
+            modelBuilder.Entity("BugTracker2.Models.UserProjectInfo", b =>
                 {
-                    b.Property<int>("UserGroupId")
+                    b.Property<int>("UserProjectInfoId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int")
                         .UseIdentityColumn();
 
-                    b.Property<int>("GroupId")
+                    b.Property<int>("PrivilegeId")
                         .HasColumnType("int");
-
-                    b.Property<string>("UserId")
-                        .HasColumnType("nvarchar(450)");
-
-                    b.HasKey("UserGroupId");
-
-                    b.HasIndex("GroupId");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("UserGroup");
-                });
-
-            modelBuilder.Entity("BugTracker2.Models.UserProject", b =>
-                {
-                    b.Property<int>("UserProjectId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
-                        .UseIdentityColumn();
 
                     b.Property<int>("ProjectId")
                         .HasColumnType("int");
@@ -317,7 +237,9 @@ namespace BugTracker2.Migrations
                     b.Property<string>("UserId")
                         .HasColumnType("nvarchar(450)");
 
-                    b.HasKey("UserProjectId");
+                    b.HasKey("UserProjectInfoId");
+
+                    b.HasIndex("PrivilegeId");
 
                     b.HasIndex("ProjectId");
 
@@ -461,25 +383,14 @@ namespace BugTracker2.Migrations
                     b.ToTable("AspNetUserTokens");
                 });
 
-            modelBuilder.Entity("BugTracker2.Models.Admin", b =>
+            modelBuilder.Entity("BugTracker2.Models.Bug", b =>
                 {
-                    b.HasOne("BugTracker2.Models.Group", "Group")
-                        .WithMany()
-                        .HasForeignKey("GroupId")
+                    b.HasOne("BugTracker2.Models.Project", "Project")
+                        .WithMany("Bugs")
+                        .HasForeignKey("ProjectId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("BugTracker2.Areas.Identity.Data.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId");
-
-                    b.Navigation("Group");
-
-                    b.Navigation("User");
-                });
-
-            modelBuilder.Entity("BugTracker2.Models.Bug", b =>
-                {
                     b.HasOne("BugTracker2.Models.Severity", "Severity")
                         .WithMany()
                         .HasForeignKey("SeverityId")
@@ -500,6 +411,8 @@ namespace BugTracker2.Migrations
                         .WithMany("BugsReported")
                         .HasForeignKey("UserReportedId");
 
+                    b.Navigation("Project");
+
                     b.Navigation("Severity");
 
                     b.Navigation("Status");
@@ -509,53 +422,25 @@ namespace BugTracker2.Migrations
                     b.Navigation("UserReported");
                 });
 
-            modelBuilder.Entity("BugTracker2.Models.GroupProject", b =>
+            modelBuilder.Entity("BugTracker2.Models.UserProjectInfo", b =>
                 {
-                    b.HasOne("BugTracker2.Models.Group", "Group")
-                        .WithMany("GroupProjects")
-                        .HasForeignKey("GroupId")
+                    b.HasOne("BugTracker2.Models.Privilege", "Privilege")
+                        .WithMany()
+                        .HasForeignKey("PrivilegeId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("BugTracker2.Models.Project", "Project")
-                        .WithMany("GroupProjects")
-                        .HasForeignKey("ProjectId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Group");
-
-                    b.Navigation("Project");
-                });
-
-            modelBuilder.Entity("BugTracker2.Models.UserGroup", b =>
-                {
-                    b.HasOne("BugTracker2.Models.Group", "Group")
-                        .WithMany("UserGroups")
-                        .HasForeignKey("GroupId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("BugTracker2.Areas.Identity.Data.User", "User")
-                        .WithMany("UserGroups")
-                        .HasForeignKey("UserId");
-
-                    b.Navigation("Group");
-
-                    b.Navigation("User");
-                });
-
-            modelBuilder.Entity("BugTracker2.Models.UserProject", b =>
-                {
-                    b.HasOne("BugTracker2.Models.Project", "Project")
-                        .WithMany("UserProjects")
+                        .WithMany("UserProjectInfos")
                         .HasForeignKey("ProjectId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("BugTracker2.Areas.Identity.Data.User", "User")
-                        .WithMany("UserProjects")
+                        .WithMany("UserProjectInfos")
                         .HasForeignKey("UserId");
+
+                    b.Navigation("Privilege");
 
                     b.Navigation("Project");
 
@@ -619,23 +504,14 @@ namespace BugTracker2.Migrations
 
                     b.Navigation("BugsReported");
 
-                    b.Navigation("UserGroups");
-
-                    b.Navigation("UserProjects");
-                });
-
-            modelBuilder.Entity("BugTracker2.Models.Group", b =>
-                {
-                    b.Navigation("GroupProjects");
-
-                    b.Navigation("UserGroups");
+                    b.Navigation("UserProjectInfos");
                 });
 
             modelBuilder.Entity("BugTracker2.Models.Project", b =>
                 {
-                    b.Navigation("GroupProjects");
+                    b.Navigation("Bugs");
 
-                    b.Navigation("UserProjects");
+                    b.Navigation("UserProjectInfos");
                 });
 #pragma warning restore 612, 618
         }

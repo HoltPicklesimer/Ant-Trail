@@ -12,6 +12,7 @@ namespace BugTracker2.Controllers
 {
     public class BugsController : Controller
     {
+        const string UNASSIGNED = "--UnAssigned--";
         private readonly BugTracker2Context _context;
 
         public BugsController(BugTracker2Context context)
@@ -22,7 +23,14 @@ namespace BugTracker2.Controllers
         // GET: Bugs
         public async Task<IActionResult> Index()
         {
-            var bugTracker2Context = _context.Bugs.Include(b => b.Severity).Include(b => b.Status).Include(b => b.UserAssigned).Include(b => b.UserReported);
+            var bugTracker2Context = _context.Bugs
+                .Include(b => b.Severity)
+                .Include(b => b.Status)
+                .Include(b => b.UserAssigned)
+                .Include(b => b.UserReported)
+                .OrderBy(b => b.Severity.Priority)
+                .ThenBy(b => b.ReportDate);
+
             return View(await bugTracker2Context.ToListAsync());
         }
 
@@ -39,7 +47,9 @@ namespace BugTracker2.Controllers
                 .Include(b => b.Status)
                 .Include(b => b.UserAssigned)
                 .Include(b => b.UserReported)
+                .Include(b => b.Project)
                 .FirstOrDefaultAsync(m => m.BugId == id);
+
             if (bug == null)
             {
                 return NotFound();
@@ -49,13 +59,20 @@ namespace BugTracker2.Controllers
         }
 
         // GET: Bugs/Create
-        public IActionResult Create()
+        public IActionResult Create(int id)
         {
-            ViewData["SeverityId"] = new SelectList(_context.Severity, "SeverityId", "SeverityId");
-            ViewData["StatusId"] = new SelectList(_context.Status, "StatusId", "StatusId");
-            ViewData["UserAssignedId"] = new SelectList(_context.Users, "Id", "Id");
-            ViewData["UserReportedId"] = new SelectList(_context.Users, "Id", "Id");
-            return View();
+            // To Do: Need to add privilege and user validation
+            var project = _context.Project.FirstOrDefault(p => p.ProjectId == id);
+
+            ViewData["ProjectName"] = project.ProjectName;
+            ViewData["SeverityId"] = new SelectList(_context.Severity.OrderByDescending(s => s.Priority), "SeverityId", "SeverityDisplay");
+            ViewData["StatusId"] = new SelectList(_context.Status.OrderBy(s => s.Step), "StatusId", "StatusDisplay");
+            ViewData["UserAssignedId"] = GetUserSelect(id);
+            ViewData["UserReportedId"] = GetUserSelect(id);
+
+            var bug = new Bug() { ProjectId = id };
+
+            return View(bug);
         }
 
         // POST: Bugs/Create
@@ -63,18 +80,27 @@ namespace BugTracker2.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("BugId,BugName,ReportDate,SeverityId,Behavior,StepsDescription,UserReportedId,UserAssignedId,StatusId")] Bug bug)
+        public async Task<IActionResult> Create([Bind("ProjectId,BugId,BugName,SeverityId,Behavior,StepsDescription,UserReportedId,UserAssignedId")] Bug bug)
         {
+            var status = (bug.UserAssignedId == _context.Users.FirstOrDefault(u => u.FirstName == UNASSIGNED).Id) ? "New" : "Assigned";
+            bug.Status = _context.Status.FirstOrDefault(s => s.StatusName == status);
+            bug.ReportDate = DateTime.Now;
+
             if (ModelState.IsValid)
             {
                 _context.Add(bug);
                 await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
+                return RedirectToAction(nameof(ProjectsController.Details), "Projects", new { id = bug.ProjectId });
             }
-            ViewData["SeverityId"] = new SelectList(_context.Severity, "SeverityId", "SeverityId", bug.SeverityId);
-            ViewData["StatusId"] = new SelectList(_context.Status, "StatusId", "StatusId", bug.StatusId);
-            ViewData["UserAssignedId"] = new SelectList(_context.Users, "Id", "Id", bug.UserAssignedId);
-            ViewData["UserReportedId"] = new SelectList(_context.Users, "Id", "Id", bug.UserReportedId);
+
+            var project = _context.Project.FirstOrDefault(p => p.ProjectId == bug.ProjectId);
+
+            ViewData["ProjectName"] = project.ProjectName;
+            ViewData["SeverityId"] = new SelectList(_context.Severity.OrderByDescending(s => s.Priority), "SeverityId", "SeverityDisplay");
+            ViewData["StatusId"] = new SelectList(_context.Status.OrderBy(s => s.Step), "StatusId", "StatusDisplay");
+            ViewData["UserAssignedId"] = GetUserSelect(bug.ProjectId);
+            ViewData["UserReportedId"] = GetUserSelect(bug.ProjectId);
+
             return View(bug);
         }
 
@@ -91,10 +117,15 @@ namespace BugTracker2.Controllers
             {
                 return NotFound();
             }
-            ViewData["SeverityId"] = new SelectList(_context.Severity, "SeverityId", "SeverityId", bug.SeverityId);
-            ViewData["StatusId"] = new SelectList(_context.Status, "StatusId", "StatusId", bug.StatusId);
-            ViewData["UserAssignedId"] = new SelectList(_context.Users, "Id", "Id", bug.UserAssignedId);
-            ViewData["UserReportedId"] = new SelectList(_context.Users, "Id", "Id", bug.UserReportedId);
+
+            var project = _context.Project.FirstOrDefault(p => p.ProjectId == bug.ProjectId);
+
+            ViewData["ProjectName"] = project.ProjectName;
+            ViewData["SeverityId"] = new SelectList(_context.Severity.OrderByDescending(s => s.Priority), "SeverityId", "SeverityDisplay");
+            ViewData["StatusId"] = new SelectList(_context.Status.OrderBy(s => s.Step), "StatusId", "StatusDisplay");
+            ViewData["UserAssignedId"] = GetUserSelect(bug.ProjectId);
+            ViewData["UserReportedId"] = GetUserSelect(bug.ProjectId);
+
             return View(bug);
         }
 
@@ -103,13 +134,8 @@ namespace BugTracker2.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("BugId,BugName,ReportDate,SeverityId,Behavior,StepsDescription,UserReportedId,UserAssignedId,StatusId")] Bug bug)
+        public async Task<IActionResult> Edit([Bind("BugId,BugName,ReportDate,SeverityId,Behavior,StepsDescription,UserReportedId,UserAssignedId,StatusId,ProjectId")] Bug bug)
         {
-            if (id != bug.BugId)
-            {
-                return NotFound();
-            }
-
             if (ModelState.IsValid)
             {
                 try
@@ -128,12 +154,18 @@ namespace BugTracker2.Controllers
                         throw;
                     }
                 }
-                return RedirectToAction(nameof(Index));
+
+                return RedirectToAction(nameof(ProjectsController.Details), "Projects", new { id = bug.ProjectId });
             }
-            ViewData["SeverityId"] = new SelectList(_context.Severity, "SeverityId", "SeverityId", bug.SeverityId);
-            ViewData["StatusId"] = new SelectList(_context.Status, "StatusId", "StatusId", bug.StatusId);
-            ViewData["UserAssignedId"] = new SelectList(_context.Users, "Id", "Id", bug.UserAssignedId);
-            ViewData["UserReportedId"] = new SelectList(_context.Users, "Id", "Id", bug.UserReportedId);
+
+            var project = _context.Project.FirstOrDefault(p => p.ProjectId == bug.ProjectId);
+
+            ViewData["ProjectName"] = project.ProjectName;
+            ViewData["SeverityId"] = new SelectList(_context.Severity.OrderByDescending(s => s.Priority), "SeverityId", "SeverityDisplay");
+            ViewData["StatusId"] = new SelectList(_context.Status.OrderBy(s => s.Step), "StatusId", "StatusDisplay");
+            ViewData["UserAssignedId"] = GetUserSelect(bug.ProjectId);
+            ViewData["UserReportedId"] = GetUserSelect(bug.ProjectId);
+
             return View(bug);
         }
 
@@ -150,7 +182,9 @@ namespace BugTracker2.Controllers
                 .Include(b => b.Status)
                 .Include(b => b.UserAssigned)
                 .Include(b => b.UserReported)
+                .Include(b => b.Project)
                 .FirstOrDefaultAsync(m => m.BugId == id);
+
             if (bug == null)
             {
                 return NotFound();
@@ -167,12 +201,23 @@ namespace BugTracker2.Controllers
             var bug = await _context.Bugs.FindAsync(id);
             _context.Bugs.Remove(bug);
             await _context.SaveChangesAsync();
-            return RedirectToAction(nameof(Index));
+            return RedirectToAction(nameof(ProjectsController.Details), "Projects", new { id = bug.ProjectId });
         }
 
         private bool BugExists(int id)
         {
             return _context.Bugs.Any(e => e.BugId == id);
+        }
+
+        private SelectList GetUserSelect(int projectId)
+        {
+            var users = _context.Users
+                .Where(u => u.UserProjectInfos.Any(p => p.ProjectId == projectId))
+                .OrderBy(s => s.FirstName);
+            var items = users.ToList();
+            items.Insert(0, _context.Users.FirstOrDefault(u => u.FirstName == UNASSIGNED));
+            var userSelect = new SelectList(items, "Id", "FullName");
+            return userSelect;
         }
     }
 }

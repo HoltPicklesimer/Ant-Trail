@@ -3,21 +3,20 @@ using BugTracker2.Areas.Identity.Data;
 
 namespace BugTracker2.Models
 {
-    public class Admin
+    public class UserProjectInfo
     {
-        public int AdminId { get; set; }
+        public int UserProjectInfoId { get; set; }
 
-        [Display(Name = "User")]
+        [Display(Name = "Enter User Email")]
         public string UserId { get; set; }
-
-        [Display(Name = "Group")]
-        public int GroupId { get; set; }
+        public int ProjectId { get; set; }
 
         [Display(Name = "Privilege Level")]
         public int PrivilegeId { get; set; }
 
         // Navigation Properties
         public User User { get; set; }
-        public Group Group { get; set; }
+        public Project Project { get; set; }
+        public Privilege Privilege { get; set; }
     }
 }

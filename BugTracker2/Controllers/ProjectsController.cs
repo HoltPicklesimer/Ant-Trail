@@ -7,22 +7,36 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using BugTracker2.Areas.Identity.Data;
 using BugTracker2.Models;
+using Microsoft.AspNetCore.Http;
+using System.Security.Claims;
 
 namespace BugTracker2.Controllers
 {
     public class ProjectsController : Controller
     {
         private readonly BugTracker2Context _context;
+        private string userId;
 
         public ProjectsController(BugTracker2Context context)
         {
             _context = context;
+
+            // Get the User Id
+            var httpContextAccessor = new HttpContextAccessor();
+            userId = httpContextAccessor.HttpContext.User.FindFirst(ClaimTypes.NameIdentifier).Value;
         }
 
         // GET: Projects
         public async Task<IActionResult> Index()
         {
-            return View(await _context.Project.ToListAsync());
+            // Get the projects a user is a part of
+            var projects = _context.Project
+                .Include(p => p.UserProjectInfos)
+                .ThenInclude(up => up.User)
+                .Where(g => g.UserProjectInfos.Any(u => u.UserId == userId))
+                .OrderBy(p => p.ProjectName);
+
+            return View(await projects.ToListAsync());
         }
 
         // GET: Projects/Details/5
@@ -33,9 +47,24 @@ namespace BugTracker2.Controllers
                 return NotFound();
             }
 
+            // Get the project, user, admin, and privilege info
             var project = await _context.Project
+                .Include(p => p.UserProjectInfos)
+                .ThenInclude(up => up.User)
+                .Include(p => p.UserProjectInfos)
+                .ThenInclude(up => up.Privilege)
+                .Include(p => p.Bugs)
+                .ThenInclude(b => b.Severity)
+                .Include(p => p.Bugs)
+                .ThenInclude(b => b.Status)
+                .Include(p => p.Bugs)
+                .ThenInclude(b => b.UserAssigned)
+                .Include(p => p.Bugs)
+                .ThenInclude(b => b.UserReported)
                 .FirstOrDefaultAsync(m => m.ProjectId == id);
-            if (project == null)
+
+            // Check to make sure the user has read privileges
+            if (project == null || !ReadEnabled(project.ProjectId))
             {
                 return NotFound();
             }
@@ -58,10 +87,28 @@ namespace BugTracker2.Controllers
         {
             if (ModelState.IsValid)
             {
+                // Add the project
                 _context.Add(project);
+
                 await _context.SaveChangesAsync();
+
+                // Add the user to the project with the master privilege level
+                var userProjectInfo = new UserProjectInfo()
+                {
+                    ProjectId = project.ProjectId,
+                    UserId = userId,
+                    PrivilegeId = _context.Privilege.Where(p => p.PrivilegeLevel == 4)
+                        .FirstOrDefault()?.PrivilegeId ?? 0
+                };
+
+                _context.Add(userProjectInfo);
+
+                await _context.SaveChangesAsync();
+
+
                 return RedirectToAction(nameof(Index));
             }
+
             return View(project);
         }
 
@@ -73,11 +120,16 @@ namespace BugTracker2.Controllers
                 return NotFound();
             }
 
-            var project = await _context.Project.FindAsync(id);
-            if (project == null)
+            var project = await _context.Project
+                .Include(p => p.UserProjectInfos)
+                .FirstOrDefaultAsync(m => m.ProjectId == id);
+
+            // Check to make sure the user has CRUD privileges
+            if (project == null || !CRUDEnabled(project.ProjectId))
             {
                 return NotFound();
             }
+
             return View(project);
         }
 
@@ -88,7 +140,8 @@ namespace BugTracker2.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, [Bind("ProjectId,ProjectName,ProjectDescription")] Project project)
         {
-            if (id != project.ProjectId)
+            // Verify the user has CRUD privileges
+            if (id != project.ProjectId || !CRUDEnabled(id))
             {
                 return NotFound();
             }
@@ -125,8 +178,11 @@ namespace BugTracker2.Controllers
             }
 
             var project = await _context.Project
+                .Include(p => p.UserProjectInfos)
                 .FirstOrDefaultAsync(m => m.ProjectId == id);
-            if (project == null)
+
+            // Verify the user has CRUD privileges
+            if (project == null || !CRUDEnabled(project.ProjectId))
             {
                 return NotFound();
             }
@@ -139,6 +195,12 @@ namespace BugTracker2.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
+            // Check to make sure the user has CRUD privileges
+            if (!CRUDEnabled(id))
+            {
+                return NotFound();
+            }
+
             var project = await _context.Project.FindAsync(id);
             _context.Project.Remove(project);
             await _context.SaveChangesAsync();
@@ -148,6 +210,19 @@ namespace BugTracker2.Controllers
         private bool ProjectExists(int id)
         {
             return _context.Project.Any(e => e.ProjectId == id);
+        }
+
+        private bool ReadEnabled(int projectId)
+        {
+            return _context.UserProjectInfo.Any(ug => ug.ProjectId == projectId
+                                            && ug.UserId == userId);
+        }
+
+        private bool CRUDEnabled(int projectId)
+        {
+            return _context.UserProjectInfo.Any(p => p.ProjectId == projectId
+                                        && p.UserId == userId
+                                        && p.Privilege.PrivilegeLevel >= 2);
         }
     }
 }

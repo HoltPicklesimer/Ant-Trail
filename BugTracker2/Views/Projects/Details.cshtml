@@ -1,31 +1,107 @@
 ﻿@model BugTracker2.Models.Project
 
 @{
-    ViewData["Title"] = "Details";
-    Layout = "~/Views/Shared/_LoginPartial.cshtml";
+    ViewData["Title"] = "Project Details";
+    Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
-<h1>Details</h1>
+<h1>Project Details</h1>
 
 <div>
-    <h4>Project</h4>
     <hr />
     <dl class="row">
-        <dt class = "col-sm-2">
+        <dt class="col-sm-2">
             @Html.DisplayNameFor(model => model.ProjectName)
         </dt>
-        <dd class = "col-sm-10">
+        <dd class="col-sm-10">
             @Html.DisplayFor(model => model.ProjectName)
         </dd>
-        <dt class = "col-sm-2">
+        <dt class="col-sm-2">
             @Html.DisplayNameFor(model => model.ProjectDescription)
         </dt>
-        <dd class = "col-sm-10">
+        <dd class="col-sm-10">
             @Html.DisplayFor(model => model.ProjectDescription)
         </dd>
+
+        <dd class="col-sm-12">
+            <a asp-action="Edit" asp-route-id="@Model.ProjectId">Edit Project Details</a> |
+            <a asp-action="Index">Back to List</a>
+        </dd>
+
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.Bugs)
+        </dt>
+        <dd class="col-sm-10">
+            <a asp-action="Create" asp-controller="Bugs" asp-route-id="@Model.ProjectId">Report a Bug</a>
+            <table class="table font-sm">
+                <tr>
+                    <th>Date</th>
+                    <th>Bug Name</th>
+                    <th>Severity</th>
+                    <th>Status</th>
+                    <th>Assigned</th>
+                    <th></th>
+                </tr>
+                @foreach (var item in Model.Bugs.OrderBy(b => b.Status.Step == 9).ThenBy(b => b.Severity.Priority).ThenBy(b => b.ReportDate))
+                {
+                    <tr>
+                        <td>
+                            @Html.DisplayFor(modelItem => item.ReportDate)
+                        </td>
+                        <td>
+                            @Html.DisplayFor(modelItem => item.BugName)
+                        </td>
+                        <td>
+                            @Html.DisplayFor(modelItem => item.Severity.SeverityDisplay)
+                        </td>
+                        <td>
+                            @Html.DisplayFor(modelItem => item.Status.StatusDisplay)
+                        </td>
+                        <td>
+                            @Html.DisplayFor(modelItem => item.UserAssigned.FullName)
+                        </td>
+                        <td>
+                            @*To Do : Order bugs by priority and then date*@
+                            <a asp-action="Edit" asp-controller="Bugs" asp-route-id="@item.BugId">Edit</a> |
+                            <a asp-action="Details" asp-controller="Bugs" asp-route-id="@item.BugId">Details</a> |
+                            <a asp-action="Delete" asp-controller="Bugs" asp-route-id="@item.BugId">Delete</a>
+                        </td>
+                    </tr>
+                }
+            </table>
+        </dd>
+
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.UserProjectInfos)
+        </dt>
+        <dd class="col-sm-10">
+            <a asp-action="Create" asp-controller="UserProjectInfos" asp-route-id="@Model.ProjectId">Add a User to this Project</a>
+            <table class="table font-sm">
+                <tr>
+                    <th>User</th>
+                    <th>Email</th>
+                    <th>Privilege</th>
+                </tr>
+                @foreach (var item in Model.UserProjectInfos.OrderBy(u => u.User.FirstName))
+                {
+                    <tr>
+                        <td>
+                            @Html.DisplayFor(modelItem => item.User.FullName)
+                        </td>
+                        <td>
+                            @Html.DisplayFor(modelItem => item.User.Email)
+                        </td>
+                        <td>
+                            @Html.DisplayFor(modelItem => item.Privilege.PrivilegeName)
+                        </td>
+                        <td>
+                            <a asp-action="Edit" asp-controller="UserProjectInfos" asp-route-id="@item.UserProjectInfoId">Edit</a> |
+                            <a asp-action="Details" asp-controller="UserProjectInfos" asp-route-id="@item.UserProjectInfoId">Details</a> |
+                            <a asp-action="Delete" asp-controller="UserProjectInfos" asp-route-id="@item.UserProjectInfoId">Remove</a>
+                        </td>
+                    </tr>
+                }
+            </table>
+        </dd>
     </dl>
-</div>
-<div>
-    <a asp-action="Edit" asp-route-id="@Model.ProjectId">Edit</a> |
-    <a asp-action="Index">Back to List</a>
 </div>

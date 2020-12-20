@@ -95,9 +95,12 @@
                             @Html.DisplayFor(modelItem => item.Privilege.PrivilegeName)
                         </td>
                         <td>
-                            <a asp-action="Edit" asp-controller="UserProjectInfos" asp-route-id="@item.UserProjectInfoId">Edit</a> |
-                            <a asp-action="Details" asp-controller="UserProjectInfos" asp-route-id="@item.UserProjectInfoId">Details</a> |
-                            <a asp-action="Delete" asp-controller="UserProjectInfos" asp-route-id="@item.UserProjectInfoId">Remove</a>
+                            @if (item.Privilege.PrivilegeLevel != 4)
+                            {
+                                <a asp-action="Edit" asp-controller="UserProjectInfos" asp-route-id="@item.UserProjectInfoId">Edit</a><span> | </span>
+                                <a asp-action="Details" asp-controller="UserProjectInfos" asp-route-id="@item.UserProjectInfoId">Details</a><span> | </span>
+                                <a asp-action="Delete" asp-controller="UserProjectInfos" asp-route-id="@item.UserProjectInfoId">Remove</a>
+                            }
                         </td>
                     </tr>
                 }

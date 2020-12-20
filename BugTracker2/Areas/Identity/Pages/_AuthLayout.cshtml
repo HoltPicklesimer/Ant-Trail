@@ -2,6 +2,12 @@
     Layout = "/Views/Shared/_Layout.cshtml";
 }
 
+<div class="text-center">
+    <h1 class="display-4">Welcome to Ant Trail!</h1>
+    <h2>A Bug Tracker created using ASP.NET Core, MVC, and Entity Framework.</h2>
+</div>
+
+
 <div class="row">
     <div class="col-md-6 offset-md-3">
         <div class="card login-logout-tab">
@@ -27,17 +33,27 @@
     </div>
 </div>
 
+<div class="text-center">
+    <img src="~/images/bug.jpg" title="Stomp out your bugs with Ant Trail!" class="main-img" />
+    <p>
+        Ant Trail is a bug logging and tracking web application. Users can create an account, create project bug logs,
+        and report and track bugs. It was developed by Holt Picklesimer, who you can contact at holtpicklesimer@gmail.com or
+        message on <a href="https://www.linkedin.com/in/holt-picklesimer">Linked-In</a> and is completely free to use.
+        Please check out some of my other projects on my <a href="https://holtpicklesimer.github.io/portfolio/">portfolio website</a>.
+    </p>
+</div>
+
 @section Scripts {
     @RenderSection("Scripts", required: false);
 
-<script>
-    $(function () {
-        var current = location.pathname;
-        $('.nav-tabs li a').each(function () {
-            if (current.indexOf($(this).attr('href')) !== -1) {
-                $(this).addClass('active');
-            }
+    <script>
+        $(function () {
+            var current = location.pathname;
+            $('.nav-tabs li a').each(function () {
+                if (current.indexOf($(this).attr('href')) !== -1) {
+                    $(this).addClass('active');
+                }
+            });
         });
-    });
-</script>
+    </script>
 }

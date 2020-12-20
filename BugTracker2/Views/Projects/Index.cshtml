@@ -10,6 +10,31 @@
 <p>
     <a asp-action="Create">Create a Project</a>
 </p>
+
+<form asp-action="Index" method="get" asp-route-currentSort="@ViewData["CurrentSort"]" asp-route-currentFilter="@ViewData["CurrentFilter"]">
+    <div class="form-actions no-color">
+        <p>
+            Sort:
+            <select name="SortOrder" value="@ViewData["CurrentSort"]">
+                <option value="asc">Alphabetically</option>
+                @if ((string)ViewData["CurrentSort"] == "desc")
+                {
+                    <option value="desc" selected>Alphabetically Descending</option>
+                }
+                else
+                {
+                    <option value="desc">Alphabetically Descending</option>
+                }
+            </select>
+            Search by project name: <input type="text" name="SearchString" value="@ViewData["CurrentFilter"]" />
+            <input type="submit" value="Apply" class="btn btn-default" /> |
+            <a asp-action="Index">Back to Full List</a>
+        </p>
+    </div>
+</form>
+
+
+
 <table class="table">
     <thead>
         <tr>
@@ -23,20 +48,21 @@
         </tr>
     </thead>
     <tbody>
-@foreach (var item in Model) {
-        <tr>
-            <td>
-                @Html.DisplayFor(modelItem => item.ProjectName)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.ProjectDescription)
-            </td>
-            <td>
-                <a asp-action="Edit" asp-route-id="@item.ProjectId">Edit</a> |
-                <a asp-action="Details" asp-route-id="@item.ProjectId">Details</a> |
-                <a asp-action="Delete" asp-route-id="@item.ProjectId">Delete</a>
-            </td>
-        </tr>
-}
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>
+                    @Html.DisplayFor(modelItem => item.ProjectName)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.ProjectDescription)
+                </td>
+                <td>
+                    <a asp-action="Edit" asp-route-id="@item.ProjectId">Edit</a> |
+                    <a asp-action="Details" asp-route-id="@item.ProjectId">Details</a> |
+                    <a asp-action="Delete" asp-route-id="@item.ProjectId">Delete</a>
+                </td>
+            </tr>
+        }
     </tbody>
 </table>

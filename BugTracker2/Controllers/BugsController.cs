@@ -7,17 +7,25 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using BugTracker2.Areas.Identity.Data;
 using BugTracker2.Models;
+using Microsoft.AspNetCore.Http;
+using System.Security.Claims;
 
 namespace BugTracker2.Controllers
 {
     public class BugsController : Controller
     {
+        const int CRUDPRIVILEGE = 2;
         const string UNASSIGNED = "--UnAssigned--";
         private readonly BugTracker2Context _context;
+        private string userId;
 
         public BugsController(BugTracker2Context context)
         {
             _context = context;
+
+            // Get the User Id
+            var httpContextAccessor = new HttpContextAccessor();
+            userId = httpContextAccessor.HttpContext.User.FindFirst(ClaimTypes.NameIdentifier).Value;
         }
 
         // GET: Bugs
@@ -50,7 +58,8 @@ namespace BugTracker2.Controllers
                 .Include(b => b.Project)
                 .FirstOrDefaultAsync(m => m.BugId == id);
 
-            if (bug == null)
+            var projectId = _context.Bugs.FirstOrDefault(b => b.BugId == id).ProjectId;
+            if (bug == null || !ReadEnabled(projectId))
             {
                 return NotFound();
             }
@@ -86,7 +95,11 @@ namespace BugTracker2.Controllers
             bug.Status = _context.Status.FirstOrDefault(s => s.StatusName == status);
             bug.ReportDate = DateTime.Now;
 
-            if (ModelState.IsValid)
+            if (!CRUDEnabled(bug.ProjectId))
+            {
+                ModelState.AddModelError("", "You have insufficient privileges to create this item!");
+            }
+            else if (ModelState.IsValid)
             {
                 _context.Add(bug);
                 await _context.SaveChangesAsync();
@@ -136,7 +149,11 @@ namespace BugTracker2.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit([Bind("BugId,BugName,ReportDate,SeverityId,Behavior,StepsDescription,UserReportedId,UserAssignedId,StatusId,ProjectId")] Bug bug)
         {
-            if (ModelState.IsValid)
+            if (!CRUDEnabled(bug.ProjectId))
+            {
+                ModelState.AddModelError("", "You have insufficient privileges to edit this item!");
+            }
+            else if (ModelState.IsValid)
             {
                 try
                 {
@@ -199,9 +216,17 @@ namespace BugTracker2.Controllers
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
             var bug = await _context.Bugs.FindAsync(id);
-            _context.Bugs.Remove(bug);
-            await _context.SaveChangesAsync();
-            return RedirectToAction(nameof(ProjectsController.Details), "Projects", new { id = bug.ProjectId });
+
+            if (!CRUDEnabled(bug.ProjectId))
+            {
+                return NotFound("Error: You have insufficient privileges to delete this item!");
+            }
+            else
+            {
+                _context.Bugs.Remove(bug);
+                await _context.SaveChangesAsync();
+                return RedirectToAction(nameof(ProjectsController.Details), "Projects", new { id = bug.ProjectId });
+            }
         }
 
         private bool BugExists(int id)
@@ -218,6 +243,19 @@ namespace BugTracker2.Controllers
             items.Insert(0, _context.Users.FirstOrDefault(u => u.FirstName == UNASSIGNED));
             var userSelect = new SelectList(items, "Id", "FullName");
             return userSelect;
+        }
+
+        private bool ReadEnabled(int projectId)
+        {
+            return _context.UserProjectInfo.Any(ug => ug.ProjectId == projectId
+                                            && ug.UserId == userId);
+        }
+
+        private bool CRUDEnabled(int projectId)
+        {
+            return _context.UserProjectInfo.Any(p => p.ProjectId == projectId
+                                        && p.UserId == userId
+                                        && p.Privilege.PrivilegeLevel >= CRUDPRIVILEGE);
         }
     }
 }

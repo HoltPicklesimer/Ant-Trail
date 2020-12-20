@@ -6,6 +6,9 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.Extensions.Logging;
+using BugTracker2.Models;
+using BugTracker2.Areas.Identity.Data;
+using System.Linq;
 
 namespace BugTracker2.Areas.Identity.Pages.Account.Manage
 {
@@ -14,15 +17,18 @@ namespace BugTracker2.Areas.Identity.Pages.Account.Manage
         private readonly UserManager<User> _userManager;
         private readonly SignInManager<User> _signInManager;
         private readonly ILogger<DeletePersonalDataModel> _logger;
+        private BugTracker2Context _context;
 
         public DeletePersonalDataModel(
             UserManager<User> userManager,
             SignInManager<User> signInManager,
-            ILogger<DeletePersonalDataModel> logger)
+            ILogger<DeletePersonalDataModel> logger,
+            BugTracker2Context context)
         {
             _userManager = userManager;
             _signInManager = signInManager;
             _logger = logger;
+            _context = context;
         }
 
         [BindProperty]
@@ -66,6 +72,21 @@ namespace BugTracker2.Areas.Identity.Pages.Account.Manage
                     return Page();
                 }
             }
+
+            // Remove the user from all dependent projects before deleting
+            var userProjects = _context.UserProjectInfo.Where(p => p.UserId == user.Id);
+            _context.RemoveRange(userProjects);
+
+            // Remove the user from all bugs where they are referenced
+            var assignedBugs = _context.Bugs.Where(b => b.UserAssignedId == user.Id);
+            foreach (var bug in assignedBugs)
+                bug.UserAssignedId = _context.Users.FirstOrDefault(u => u.FirstName == "--UnAssigned--").Id;
+
+            var reportedBugs = _context.Bugs.Where(b => b.UserAssignedId == user.Id);
+            foreach (var bug in reportedBugs)
+                bug.UserReportedId = _context.Users.FirstOrDefault(u => u.FirstName == "--UnAssigned--").Id;
+
+            _context.SaveChanges();
 
             var result = await _userManager.DeleteAsync(user);
             var userId = await _userManager.GetUserIdAsync(user);

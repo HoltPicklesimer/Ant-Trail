@@ -14,6 +14,7 @@ namespace BugTracker2.Controllers
 {
     public class ProjectsController : Controller
     {
+        private const int CRUDPRIVILEGE = 2;
         private readonly BugTracker2Context _context;
         private string userId;
 
@@ -27,14 +28,29 @@ namespace BugTracker2.Controllers
         }
 
         // GET: Projects
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(string sortOrder, string searchString, string currentSort, string currentFilter)
         {
             // Get the projects a user is a part of
             var projects = _context.Project
                 .Include(p => p.UserProjectInfos)
                 .ThenInclude(up => up.User)
-                .Where(g => g.UserProjectInfos.Any(u => u.UserId == userId))
-                .OrderBy(p => p.ProjectName);
+                .Where(g => g.UserProjectInfos.Any(u => u.UserId == userId));
+
+            ViewData["CurrentSort"] = sortOrder;
+            ViewData["CurrentFilter"] = searchString;
+
+            if (!String.IsNullOrEmpty(searchString))
+            {
+                projects = projects.Where(p => p.ProjectName.Contains(searchString));
+            }
+
+            if (!string.IsNullOrEmpty(sortOrder))
+            {
+                if (sortOrder == "asc")
+                    projects = projects.OrderBy(p => p.ProjectName);
+                else
+                    projects = projects.OrderByDescending(p => p.ProjectName);
+            }
 
             return View(await projects.ToListAsync());
         }
@@ -125,7 +141,7 @@ namespace BugTracker2.Controllers
                 .FirstOrDefaultAsync(m => m.ProjectId == id);
 
             // Check to make sure the user has CRUD privileges
-            if (project == null || !CRUDEnabled(project.ProjectId))
+            if (project == null)
             {
                 return NotFound();
             }
@@ -141,7 +157,12 @@ namespace BugTracker2.Controllers
         public async Task<IActionResult> Edit(int id, [Bind("ProjectId,ProjectName,ProjectDescription")] Project project)
         {
             // Verify the user has CRUD privileges
-            if (id != project.ProjectId || !CRUDEnabled(id))
+            if (!CRUDEnabled(id))
+            {
+                ModelState.AddModelError("", "You do not have sufficient privileges to edit this project!");
+                return View(project);
+            }
+            else if (id != project.ProjectId)
             {
                 return NotFound();
             }
@@ -182,7 +203,7 @@ namespace BugTracker2.Controllers
                 .FirstOrDefaultAsync(m => m.ProjectId == id);
 
             // Verify the user has CRUD privileges
-            if (project == null || !CRUDEnabled(project.ProjectId))
+            if (project == null)
             {
                 return NotFound();
             }
@@ -195,16 +216,20 @@ namespace BugTracker2.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
+            var project = await _context.Project.FindAsync(id);
+
             // Check to make sure the user has CRUD privileges
             if (!CRUDEnabled(id))
             {
-                return NotFound();
+                ModelState.AddModelError("", "You do not have sufficient privileges to edit this project!");
+                return View(project);
             }
-
-            var project = await _context.Project.FindAsync(id);
-            _context.Project.Remove(project);
-            await _context.SaveChangesAsync();
-            return RedirectToAction(nameof(Index));
+            else
+            {
+                _context.Project.Remove(project);
+                await _context.SaveChangesAsync();
+                return RedirectToAction(nameof(Index));
+            }
         }
 
         private bool ProjectExists(int id)
@@ -222,7 +247,7 @@ namespace BugTracker2.Controllers
         {
             return _context.UserProjectInfo.Any(p => p.ProjectId == projectId
                                         && p.UserId == userId
-                                        && p.Privilege.PrivilegeLevel >= 2);
+                                        && p.Privilege.PrivilegeLevel >= CRUDPRIVILEGE);
         }
     }
 }

@@ -7,18 +7,26 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using BugTracker2.Areas.Identity.Data;
 using BugTracker2.Models;
+using Microsoft.AspNetCore.Http;
+using System.Security.Claims;
 
 namespace BugTracker2.Controllers
 {
     public class UserProjectInfosController : Controller
     {
+        private const int USERADMIN = 3;
         private const string UNASSIGNED = "--UnAssigned--";
         private const string MASTER = "Master";
         private readonly BugTracker2Context _context;
+        private string userId;
 
         public UserProjectInfosController(BugTracker2Context context)
         {
             _context = context;
+
+            // Get the User Id
+            var httpContextAccessor = new HttpContextAccessor();
+            userId = httpContextAccessor.HttpContext.User.FindFirst(ClaimTypes.NameIdentifier).Value;
         }
 
         // GET: UserProjectInfos
@@ -47,7 +55,8 @@ namespace BugTracker2.Controllers
                 .Include(u => u.User)
                 .FirstOrDefaultAsync(m => m.UserProjectInfoId == id);
 
-            if (userProjectInfo == null)
+            var projectId = _context.UserProjectInfo.FirstOrDefault(u => u.UserProjectInfoId == id).ProjectId;
+            if (userProjectInfo == null || !ReadEnabled(projectId))
             {
                 return NotFound();
             }
@@ -80,6 +89,10 @@ namespace BugTracker2.Controllers
             {
                 ModelState.AddModelError("", "Error: You must enter a unique and valid user email!");
             }
+            else if (!IsUserAdmin(userProjectInfo.ProjectId))
+            {
+                ModelState.AddModelError("", "You have insufficient privileges to create this item!");
+            }
             else if (ModelState.IsValid)
             {
                 _context.Add(userProjectInfo);
@@ -88,6 +101,7 @@ namespace BugTracker2.Controllers
             }
 
             var project = _context.Project.FirstOrDefault(p => p.ProjectId == userProjectInfo.ProjectId);
+            userProjectInfo.Project = project;
             ViewData["ProjectName"] = project.ProjectName;
             ViewData["PrivilegeId"] = GetPrivilegeSelectList();
 
@@ -102,8 +116,10 @@ namespace BugTracker2.Controllers
                 return NotFound();
             }
 
-            var userProjectInfo = await _context.UserProjectInfo.FindAsync(id);
-            if (userProjectInfo == null)
+            var userProjectInfo = _context.UserProjectInfo.FirstOrDefault(u => u.UserProjectInfoId == id);
+            var privilegeName = _context.Privilege.FirstOrDefault(p => p.PrivilegeId == userProjectInfo.PrivilegeId).PrivilegeName;
+
+            if (userProjectInfo == null || privilegeName == MASTER)
             {
                 return NotFound();
             }
@@ -124,7 +140,12 @@ namespace BugTracker2.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit([Bind("UserProjectInfoId,UserId,ProjectId,PrivilegeId")] UserProjectInfo userProjectInfo)
         {
-            if (ModelState.IsValid)
+            var privilegeName = _context.Privilege.FirstOrDefault(p => p.PrivilegeId == userProjectInfo.PrivilegeId).PrivilegeName;
+            if (!IsUserAdmin(userProjectInfo.ProjectId))
+            {
+                ModelState.AddModelError("", "You have insufficient privileges to edit this item!");
+            }
+            else if (ModelState.IsValid)
             {
                 try
                 {
@@ -144,6 +165,10 @@ namespace BugTracker2.Controllers
                 }
 
                 return RedirectToAction(nameof(ProjectsController.Details), "Projects", new { id = userProjectInfo.ProjectId });
+            }
+            else if (privilegeName == MASTER)
+            {
+                ModelState.AddModelError("", "You cannot edit a master privilege");
             }
 
             var project = _context.Project.FirstOrDefault(p => p.ProjectId == userProjectInfo.ProjectId);
@@ -169,7 +194,7 @@ namespace BugTracker2.Controllers
                 .Include(u => u.User)
                 .FirstOrDefaultAsync(m => m.UserProjectInfoId == id);
 
-            if (userProjectInfo == null)
+            if (userProjectInfo == null || userProjectInfo.Privilege.PrivilegeName == MASTER)
             {
                 return NotFound();
             }
@@ -183,9 +208,24 @@ namespace BugTracker2.Controllers
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
             var userProjectInfo = await _context.UserProjectInfo.FindAsync(id);
-            _context.UserProjectInfo.Remove(userProjectInfo);
-            await _context.SaveChangesAsync();
-            return RedirectToAction(nameof(ProjectsController.Details), "Projects", new { id = userProjectInfo.ProjectId });
+            var privilegeName = _context.Privilege.FirstOrDefault(p => p.PrivilegeId == userProjectInfo.PrivilegeId).PrivilegeName;
+
+            if (privilegeName == MASTER)
+            {
+                return NotFound("You cannot delete a master privilege!");
+            }
+            else if (!IsUserAdmin(userProjectInfo.ProjectId))
+            {
+                return NotFound("You have insufficient privileges to delete this item!");
+            }
+            else
+            {
+                _context.UserProjectInfo.Remove(userProjectInfo);
+                await _context.SaveChangesAsync();
+                return RedirectToAction(nameof(ProjectsController.Details), "Projects", new { id = userProjectInfo.ProjectId });
+            }
+
+            return View(userProjectInfo);
         }
 
         private bool UserProjectInfoExists(int id)
@@ -210,6 +250,19 @@ namespace BugTracker2.Controllers
                 .OrderBy(p => p.PrivilegeLevel);
 
             return new SelectList(items, "PrivilegeId", "PrivilegeDisplay");
+        }
+
+        private bool ReadEnabled(int projectId)
+        {
+            return _context.UserProjectInfo.Any(ug => ug.ProjectId == projectId
+                                            && ug.UserId == userId);
+        }
+
+        private bool IsUserAdmin(int projectId)
+        {
+            return _context.UserProjectInfo.Any(p => p.ProjectId == projectId
+                                        && p.UserId == userId
+                                        && p.Privilege.PrivilegeLevel >= USERADMIN);
         }
     }
 }
